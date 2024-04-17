@@ -1,0 +1,74 @@
+{
+  "name": "ohmyform",
+  "description": "Opensource alternative to TypeForm",
+  "repository": "https://github.com/ohmyform/ohmyform",
+  "logo": "https://raw.githubusercontent.com/ohmyform/ohmyform/master/public/logo.png",
+  "keywords": [
+    "form",
+    "survey"
+  ],
+  "env": {
+    "BASE_URL": {
+      "description": "Domain name where the site will be hosted",
+      "value": "ohmyform.herokuapp.com"
+    },
+    "MAILER_URI": {
+      "description": "Set this to a uri like smtp://localhost:1025 - for more information check https://nodemailer.com/",
+      "value": "smtp://smtp.mailtrap.io:2525"
+    },
+    "MAILER_FROM": {
+      "description": "Email address from which signup/verifications are sent",
+      "value": "OhMyForm <no-reply@localhost>"
+    },
+    "CREATE_ADMIN": {
+      "description": "Use this to automatically create an admin user on startup",
+      "value": "TRUE"
+    },
+    "ADMIN_EMAIL": {
+      "description": "The email address used by your default admin account",
+      "value": ""
+    },
+    "ADMIN_USERNAME": {
+      "description": "Username of your default admin account",
+      "value": "admin"
+    },
+    "LOGIN_NOTE": {
+      "description": "Note next to login form",
+      "value": "Welcome to your new OhMyForm instance, you can remove this login note in the dyno configuration!"
+    },
+    "ADMIN_PASSWORD": {
+      "description": "Password for your default admin account",
+      "value": ""
+    },
+    "SECRET_KEY": {
+      "description": "Database secret",
+      "generator": "secret"
+    },
+    "NODE_ENV": {
+      "description": "Node environment (production or development)",
+      "value": "production"
+    },
+    "NPM_CONFIG_PRODUCTION": {
+      "description": "Allow Dev Dependencies so we can compile typescript",
+      "value": "false"
+    },
+    "DATABASE_DRIVER": {
+      "description": "Database Driver to use",
+      "value": "postgres"
+    },
+    "DATABASE_SSL": {
+      "description": "Use SSL Connection for database",
+      "value": "true"
+    }
+  },
+  "addons": [
+    "heroku-postgresql",
+    "heroku-redis",
+    "mailtrap"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "baseData": "Dados Base",
+  "confirmDelete": "Tem certeza de que excluir este usuário?",
+  "deleteError": "não foi possível excluir o usuário",
+  "deleteNow": "Excluir agora!",
+  "deleted": "Usuário excluído",
+  "loading": "Carregando usuário",
+  "mange": "Editar usuário \" {{email}} \"",
+  "row": {
+    "created": "Criada",
+    "email": "O email",
+    "menu": "Vazio",
+    "roles": "Função"
+  },
+  "updateError": "Não foi possível atualizar o usuário",
+  "updateNow": "Salvar",
+  "updated": "Usuário atualizado"
+}

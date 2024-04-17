@@ -1,52 +1,73 @@
-FROM  node:10-alpine
-MAINTAINER OhMyForm <admin@ohmyform.com>
+## Build UI
+FROM node:20-alpine as ui
 
-# Install some needed packages
-RUN apk add --no-cache git python \
-	&& rm -rf /tmp/* \
-	&& npm install --quiet -g grunt bower pm2 \
-	&& npm cache clean --force \
-	&& mkdir -p /opt/app/public/lib
+WORKDIR /usr/src/ui
 
-# to expose the public folder to other containers
-# VOLUME /opt/app
+RUN apk --update --no-cache add curl bash g++ make libpng-dev
 
-WORKDIR /opt/app
+# install node-prune (https://github.com/tj/node-prune)
+RUN curl -sf https://gobinaries.com/tj/node-prune | sh
 
-## TODO: Find a method that's better than this for passing ENV's if possible.
-# Set default ENV
-ENV NODE_ENV=development \
-    SECRET_KEY=ChangeMeChangeMe \
-    PORT=5000 \
-    BASE_URL=localhost \
-    SOCKET_PORT=20523 \
-    SIGNUP_DISABLED=FALSE \
-    SUBDOMAINS_DISABLED=TRUE \
-    ENABLE_CLUSTER_MODE=FALSE \
-    MAILER_EMAIL_ID=ohmyform@localhost \
-    MAILER_PASSWORD="" \
-    MAILER_FROM=ohmyform@localhost \
-    MAILER_SERVICE_PROVIDER="" \
-    MAILER_SMTP_HOST="" \
-    MAILER_SMTP_PORT="" \
-    MAILER_SMTP_SECURE="" \
+COPY ui/ .
+
+RUN yarn install --frozen-lockfile
+RUN yarn build
+
+# remove development dependencies
+RUN npm prune --production
+
+# run node prune
+# there is some problem running node prune that then prevents the frontend to load (just start with /form/1 and it will crash)
+#RUN /usr/local/bin/node-prune
+
+## Build API
+FROM node:20-alpine as api
+LABEL maintainer="OhMyForm <admin@ohmyform.com>"
+
+WORKDIR /usr/src/api
+
+RUN apk --update --no-cache add curl bash g++ make libpng-dev python3
+
+# install node-prune (https://github.com/tj/node-prune)
+RUN curl -sf https://gobinaries.com/tj/node-prune | sh
+
+COPY api/ .
+
+RUN touch /usr/src/api/src/schema.gql && chown 9999:9999 /usr/src/api/src/schema.gql
+
+RUN yarn install --frozen-lockfile
+RUN yarn build
+
+# remove development dependencies
+RUN npm prune --production
+
+# run node prune
+RUN /usr/local/bin/node-prune
+
+## Production Image.
+FROM node:20-alpine
+
+RUN apk --update add supervisor nginx && rm -rf /var/cache/apk/*
+
+WORKDIR /usr/src
+
+COPY --from=api /usr/src/api /usr/src/api
+COPY --from=ui /usr/src/ui /usr/src/ui
+
+RUN addgroup --gid 9999 ohmyform && adduser -D --uid 9999 -G ohmyform ohmyform
+ENV SECRET_KEY=ChangeMe \
     CREATE_ADMIN=FALSE \
     ADMIN_EMAIL=admin@ohmyform.com \
     ADMIN_USERNAME=root \
     ADMIN_PASSWORD=root \
-    APP_NAME=OhMyForm \
-    APP_KEYWORDS="" \
-    APP_DESC="" \
-    COVERALLS_REPO_TOKEN="" \
-    GOOGLE_ANALYTICS_ID="" \
-    RAVEN_DSN=""
+    NODE_ENV=production
 
-# keep .dockerignore up to date
-COPY . .
+EXPOSE 3000
 
-RUN npm install --only=production \
-    && bower install --allow-root -f \
-    && grunt build
+RUN mkdir -p /run/nginx/
+RUN touch /usr/src/supervisord.log && chmod 777 /usr/src/supervisord.log
+COPY supervisord.conf /etc/supervisord.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Run OhMyForm server
-CMD ["node", "server.js"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+# CMD [ "yarn", "start:prod" ]

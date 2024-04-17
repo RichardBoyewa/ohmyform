@@ -1,33 +1,22 @@
-import {NestFactory, Reflector} from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
-import { useContainer } from "class-validator"
-const pkg = require('../package.json')
+import { NestApplicationOptions, ValidationPipe } from '@nestjs/common'
+import { NestFactory } from '@nestjs/core'
+import cors from 'cors'
+import { Logger } from 'nestjs-pino'
+import { AppModule } from './app.module'
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+void (async () => {
+  const options: NestApplicationOptions =  {
+    bufferLogs: true,
+  }
 
-  useContainer(app.select(AppModule), { fallbackOnErrors: true });
-
+  const app = await NestFactory.create(AppModule, options)
+  app.useLogger(app.get(Logger))
   app.useGlobalPipes(new ValidationPipe({
     disableErrorMessages: false,
     transform: true,
-  }));
+  }))
+  app.enableCors({origin: '*'})
+  app.getHttpAdapter().options('*', cors())
 
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
-
-  const options = new DocumentBuilder()
-    .setTitle('OhMyForm')
-    .setDescription('API documentation')
-    .setVersion(pkg.version)
-    .addBearerAuth()
-    .build();
-
-  const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('doc', app, document);
-
-  await app.listen(3000);
-}
-
-bootstrap();
+  await app.listen(process.env.PORT || 4100);
+})()
